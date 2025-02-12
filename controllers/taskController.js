@@ -1,41 +1,53 @@
-const mongoose = require('mongoose');
 const Task = require('../models/taskModel');
-
-// Создание задачи
-exports.createTask = async (req, res) => {
-  const { title, description, dueDate } = req.body;
-
-  try {
-    const task = new Task({ title, description, dueDate, user: req.user.userId });
-    await task.save();
-    res.status(201).json(task);
-  } catch (error) {
-    res.status(500).json({ msg: 'Ошибка создания задачи' });
-  }
-};
 
 // Получение всех задач
 exports.getTasks = async (req, res) => {
   try {
     const tasks = await Task.find({ user: req.user.userId });
-    res.json(tasks);
+    res.json(tasks); // Возвращаем задачи текущего пользователя
   } catch (error) {
-    res.status(500).json({ msg: 'Ошибка получения задач' });
+    console.error(error.message);
+    res.status(500).json({ msg: 'Ошибка сервера' });
+  }
+};
+
+// Создание задачи
+exports.createTask = async (req, res) => {
+  const { title, description, dueDate, status } = req.body;
+
+  try {
+    const newTask = new Task({
+      title,
+      description,
+      dueDate,
+      status,
+      user: req.user.userId // Связываем задачу с пользователем
+    });
+
+    await newTask.save();
+    res.status(201).json(newTask); // Возвращаем созданную задачу
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ msg: 'Ошибка при создании задачи' });
   }
 };
 
 // Обновление задачи
 exports.updateTask = async (req, res) => {
   const { id } = req.params;
+  const { title, description, dueDate, status } = req.body;
 
   try {
-    const task = await Task.findByIdAndUpdate(id, req.body, { new: true });
+    const task = await Task.findByIdAndUpdate(id, { title, description, dueDate, status }, { new: true });
+    
     if (!task) {
       return res.status(404).json({ msg: 'Задача не найдена' });
     }
-    res.json(task);
+
+    res.json(task); // Возвращаем обновленную задачу
   } catch (error) {
-    res.status(500).json({ msg: 'Ошибка обновления задачи' });
+    console.error(error.message);
+    res.status(500).json({ msg: 'Ошибка при обновлении задачи' });
   }
 };
 
@@ -45,35 +57,15 @@ exports.deleteTask = async (req, res) => {
 
   try {
     const task = await Task.findByIdAndDelete(id);
+    
     if (!task) {
       return res.status(404).json({ msg: 'Задача не найдена' });
     }
+
     res.json({ msg: 'Задача удалена' });
   } catch (error) {
-    res.status(500).json({ msg: 'Ошибка удаления задачи' });
+    console.error(error.message);
+    res.status(500).json({ msg: 'Ошибка при удалении задачи' });
   }
 };
-
-// Получение одной задачи по ID
-exports.getTaskById = async (req, res) => {
-    const { id } = req.params;
-  
-    // Проверка, является ли id валидным ObjectId
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ msg: 'Неверный формат ID' });
-    }
-  
-    try {
-      const task = await Task.findById(id);
-      
-      if (!task) {
-        return res.status(404).json({ msg: 'Задача не найдена' });
-      }
-  
-      res.json(task);
-    } catch (error) {
-      console.error(error.message);
-      res.status(500).json({ msg: 'Ошибка сервера' });
-    }
-  };
 

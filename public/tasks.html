@@ -25,7 +25,12 @@
       <input type="text" id="task-title" placeholder="Task Title" required />
       <input type="text" id="task-description" placeholder="Task Description" required />
       <input type="date" id="task-due-date" required />
-      <button type="submit">Add Task</button>
+      <select id="task-status" required>
+        <option value="incomplete">Not Started</option>
+        <option value="in-progress">In Progress</option>
+        <option value="completed">Completed</option>
+      </select>
+      <button type="submit" id="add-task-button">Add Task</button>
     </form>
   </div>
 

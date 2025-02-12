@@ -22,7 +22,7 @@ app.use('/api', authRoutes);
 app.use('/api', taskRoutes);
 
 // Отдаем статические файлы из папки public
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public')));  // Убедитесь, что папка 'public' существует
 
 // Запускаем сервер
 const PORT = process.env.PORT || 5000;

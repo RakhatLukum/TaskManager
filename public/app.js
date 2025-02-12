@@ -1,3 +1,8 @@
+const apiUrl = 'http://localhost:5000/api';
+
+// Получаем JWT токен из localStorage
+const getToken = () => localStorage.getItem('token');
+
 // Функция для отображения задач
 const displayTasks = async () => {
   const token = getToken();
@@ -15,10 +20,11 @@ const displayTasks = async () => {
 
   const tasks = await response.json();
   const taskList = document.getElementById('tasks');
-  taskList.innerHTML = '';
+  taskList.innerHTML = ''; // Очищаем список перед отображением
+
   tasks.forEach(task => {
     const li = document.createElement('li');
-    li.textContent = `${task.title} - ${task.status} - Due: ${new Date(task.dueDate).toLocaleDateString()}`;
+    li.textContent = `${task.title} - Status: ${task.status} - Due: ${new Date(task.dueDate).toLocaleDateString()}`;
 
     // Создаем кнопку редактирования
     const editButton = document.createElement('button');
@@ -35,6 +41,89 @@ const displayTasks = async () => {
     taskList.appendChild(li);
   });
 };
+
+// Логиним пользователя
+document.getElementById('login-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+
+  const response = await fetch(`${apiUrl}/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ email, password })
+  });
+
+  const data = await response.json();
+
+  if (data.token) {
+    localStorage.setItem('token', data.token); // Сохраняем токен в localStorage
+    window.location.href = 'tasks.html'; // Перенаправление на страницу задач
+  } else {
+    document.getElementById('error-message').textContent = data.msg || 'Ошибка входа';
+  }
+});
+
+// Регистрация пользователя
+document.getElementById('register-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const username = document.getElementById('username').value;
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+
+  const response = await fetch(`${apiUrl}/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ username, email, password })
+  });
+
+  const data = await response.json();
+
+  if (data.token) {
+    localStorage.setItem('token', data.token); // Сохраняем токен в localStorage
+    window.location.href = 'tasks.html'; // Перенаправление на страницу задач
+  } else {
+    document.getElementById('error-message').textContent = data.msg || 'Ошибка регистрации';
+  }
+});
+
+// Добавление новой задачи
+document.getElementById('add-task-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const token = getToken();
+  if (!token) {
+    window.location.href = 'login.html'; // Если нет токена, перенаправляем на логин
+    return;
+  }
+
+  const title = document.getElementById('task-title').value;
+  const description = document.getElementById('task-description').value;
+  const dueDate = document.getElementById('task-due-date').value;
+  const status = document.getElementById('task-status').value;
+
+  const response = await fetch(`${apiUrl}/tasks`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ title, description, dueDate, status })
+  });
+
+  if (response.ok) {
+    displayTasks();  // Обновляем список задач
+    document.getElementById('add-task-form').reset(); // Очищаем форму
+  } else {
+    alert('Error creating task');
+  }
+});
 
 // Функция для редактирования задачи
 const editTask = async (taskId) => {
@@ -57,6 +146,7 @@ const editTask = async (taskId) => {
   document.getElementById('task-title').value = task.title;
   document.getElementById('task-description').value = task.description;
   document.getElementById('task-due-date').value = new Date(task.dueDate).toISOString().split('T')[0];
+  document.getElementById('task-status').value = task.status;
 
   // Изменяем кнопку формы на "Update Task"
   const submitButton = document.getElementById('add-task-button');
@@ -67,6 +157,7 @@ const editTask = async (taskId) => {
     const title = document.getElementById('task-title').value;
     const description = document.getElementById('task-description').value;
     const dueDate = document.getElementById('task-due-date').value;
+    const status = document.getElementById('task-status').value;
 
     const updateResponse = await fetch(`${apiUrl}/tasks/${taskId}`, {
       method: 'PUT',
@@ -74,7 +165,7 @@ const editTask = async (taskId) => {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ title, description, dueDate })
+      body: JSON.stringify({ title, description, dueDate, status })
     });
 
     if (updateResponse.ok) {
@@ -108,3 +199,8 @@ const deleteTask = async (taskId) => {
     alert('Error deleting task');
   }
 };
+
+// Вызываем displayTasks на странице задач
+if (window.location.pathname === '/tasks.html') {
+  displayTasks();
+}
