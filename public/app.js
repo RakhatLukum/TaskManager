@@ -19,8 +19,14 @@ const displayTasks = async () => {
   });
 
   const tasks = await response.json();
-  const taskList = document.getElementById('tasks');
-  taskList.innerHTML = ''; // Очищаем список перед отображением
+  const taskListNotStarted = document.getElementById('not-started');
+  const taskListInProgress = document.getElementById('in-progress');
+  const taskListCompleted = document.getElementById('completed');
+
+  // Очищаем все списки перед отображением
+  taskListNotStarted.innerHTML = '';
+  taskListInProgress.innerHTML = '';
+  taskListCompleted.innerHTML = '';
 
   tasks.forEach(task => {
     const li = document.createElement('li');
@@ -38,7 +44,14 @@ const displayTasks = async () => {
     deleteButton.onclick = () => deleteTask(task._id);
     li.appendChild(deleteButton);
 
-    taskList.appendChild(li);
+    // Добавляем задачу в соответствующий список
+    if (task.status === 'incomplete') {
+      taskListNotStarted.appendChild(li);
+    } else if (task.status === 'in-progress') {
+      taskListInProgress.appendChild(li);
+    } else if (task.status === 'completed') {
+      taskListCompleted.appendChild(li);
+    }
   });
 };
 
