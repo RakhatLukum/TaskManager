@@ -1,45 +1,280 @@
+<!-- public/tasks.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
   <title>Tasks - Task Manager</title>
-  <link rel="stylesheet" href="styles.css">
+  <style>
+    body { font-family: Arial, sans-serif; }
+    #taskList div { margin-bottom: 10px; }
+    #editSection { display: none; margin-top: 20px; border: 1px solid #ccc; padding: 10px; }
+    .finished { text-decoration: line-through; }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>Task Manager</h1>
-    <nav>
-      <a href="index.html">Home</a> | <a href="login.html">Login</a> | <a href="register.html">Register</a>
-    </nav>
-  </header>
+  <h1>Manage Tasks</h1>
+  <p id="message"></p>
 
-  <div id="task-list">
-    <h2>Not Started Tasks</h2>
-    <ul id="not-started"></ul>
+  <!-- Create Task Form -->
+  <h2>Create New Task</h2>
+  <form id="createTaskForm">
+    <label>Title:</label><br/>
+    <input type="text" id="createTitle" required /><br/>
 
-    <h2>In Progress Tasks</h2>
-    <ul id="in-progress"></ul>
+    <label>Description:</label><br/>
+    <input type="text" id="createDescription" /><br/>
 
-    <h2>Completed Tasks</h2>
-    <ul id="completed"></ul>
-  </div>
+    <label>Due Date:</label><br/>
+    <input type="date" id="createDueDate" /><br/>
 
-  <div id="add-task">
-    <h2>Add New Task</h2>
-    <form id="add-task-form">
-      <input type="text" id="task-title" placeholder="Task Title" required />
-      <input type="text" id="task-description" placeholder="Task Description" required />
-      <input type="date" id="task-due-date" required />
-      <select id="task-status" required>
-        <option value="incomplete">Not Started</option>
-        <option value="in-progress">In Progress</option>
-        <option value="completed">Completed</option>
-      </select>
-      <button type="submit" id="add-task-button">Add Task</button>
+    <label>Time (HH:MM):</label><br/>
+    <input type="text" id="createTime" placeholder="e.g., 10:30" /><br/>
+
+    <label>Status:</label><br/>
+    <select id="createStatus">
+        <option value="not-started">Not Started</option>
+        <option value="incomplete">Incomplete</option>
+        <option value="finished">Finished</option>        
+    </select><br/><br/>
+
+    <button type="submit">Create Task</button>
+  </form>
+
+  <hr />
+
+  <!-- List of Tasks -->
+  <h2>All Tasks</h2>
+  <div id="taskList"></div>
+
+  <!-- Edit Task Section -->
+  <div id="editSection">
+    <h2>Edit Task</h2>
+    <form id="editTaskForm">
+      <input type="hidden" id="editTaskId" />
+
+      <label>Title:</label><br/>
+      <input type="text" id="editTitle" required /><br/>
+
+      <label>Description:</label><br/>
+      <input type="text" id="editDescription" /><br/>
+
+      <label>Due Date:</label><br/>
+      <input type="date" id="editDueDate" /><br/>
+
+      <label>Time (HH:MM):</label><br/>
+      <input type="text" id="editTime" /><br/>
+
+      <label>Status:</label><br/>
+      <select id="editStatus">
+        <option value="not-started">Not Started</option>
+        <option value="incomplete">Incomplete</option>
+        <option value="finished">Finished</option>
+      </select><br/><br/>
+
+      <button type="submit">Save Changes</button>
+      <button type="button" onclick="hideEditSection()">Cancel</button>
     </form>
   </div>
 
-  <script src="app.js"></script>
+  <script>
+    const messageEl = document.getElementById('message');
+    const taskListEl = document.getElementById('taskList');
+    const token = localStorage.getItem('token');
+
+    // If not logged in, redirect to login
+    if (!token) {
+      window.location.href = 'login.html';
+    }
+
+    // 1. Fetch & Display Tasks
+    async function fetchTasks() {
+      try {
+        const res = await fetch('/api/tasks', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          messageEl.textContent = data.message || 'Could not fetch tasks.';
+          return;
+        }
+        renderTasks(data.tasks);
+      } catch (error) {
+        console.error(error);
+        messageEl.textContent = 'An error occurred while fetching tasks.';
+      }
+    }
+
+    function renderTasks(tasks) {
+      taskListEl.innerHTML = '';
+      tasks.forEach(task => {
+        const taskDiv = document.createElement('div');
+
+        // Format date
+        let dueDateStr = 'N/A';
+        if (task.dueDate) {
+          dueDateStr = new Date(task.dueDate).toLocaleDateString();
+        }
+
+        // If status == finished, we can style text with line-through
+        taskDiv.innerHTML = `
+          <span class="${task.status === 'finished' ? 'finished' : ''}">
+            <strong>${task.title}</strong> - ${task.description}
+            <br/>
+            <em>Status:</em> ${task.status}
+            <br/>
+            <em>Due:</em> ${dueDateStr} 
+            <br/>
+            <em>Time:</em> ${task.time || 'N/A'}
+          </span>
+          <br/>
+          <button onclick="editTask('${task._id}')">Edit</button>
+          <button onclick="deleteTask('${task._id}')">Delete</button>
+        `;
+
+        taskListEl.appendChild(taskDiv);
+      });
+    }
+
+    // 2. Create Task
+    const createTaskForm = document.getElementById('createTaskForm');
+    createTaskForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = document.getElementById('createTitle').value;
+      const description = document.getElementById('createDescription').value;
+      const dueDate = document.getElementById('createDueDate').value;
+      const time = document.getElementById('createTime').value;
+      const status = document.getElementById('createStatus').value;
+
+      try {
+        const res = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ title, description, dueDate, time, status })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          messageEl.textContent = data.message || data.errors?.[0]?.msg || 'Failed to create task.';
+        } else {
+          messageEl.textContent = data.message;
+          // Clear form
+          createTaskForm.reset();
+          // Refresh tasks
+          fetchTasks();
+        }
+      } catch (error) {
+        console.error(error);
+        messageEl.textContent = 'An error occurred while creating task.';
+      }
+    });
+
+    // 3. Show Edit Form
+    function editTask(taskId) {
+      // fetch the task data from server to pre-fill the form
+      fetch(`/api/tasks/${taskId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.task) {
+          // Populate edit form
+          document.getElementById('editTaskId').value = data.task._id;
+          document.getElementById('editTitle').value = data.task.title;
+          document.getElementById('editDescription').value = data.task.description || '';
+          if (data.task.dueDate) {
+            // Convert to YYYY-MM-DD
+            const dateObj = new Date(data.task.dueDate);
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            document.getElementById('editDueDate').value = `${year}-${month}-${day}`;
+          } else {
+            document.getElementById('editDueDate').value = '';
+          }
+          document.getElementById('editTime').value = data.task.time || '';
+          document.getElementById('editStatus').value = data.task.status;
+          // Show the edit section
+          document.getElementById('editSection').style.display = 'block';
+        } else {
+          messageEl.textContent = data.message || 'Could not find the task.';
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        messageEl.textContent = 'Error fetching task details.';
+      });
+    }
+
+    // 4. Handle Edit Form Submission
+    const editTaskForm = document.getElementById('editTaskForm');
+    editTaskForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('editTaskId').value;
+      const title = document.getElementById('editTitle').value;
+      const description = document.getElementById('editDescription').value;
+      const dueDate = document.getElementById('editDueDate').value;
+      const time = document.getElementById('editTime').value;
+      const status = document.getElementById('editStatus').value;
+
+      try {
+        const res = await fetch(`/api/tasks/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ title, description, dueDate, time, status })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          messageEl.textContent = data.message || 'Failed to update task.';
+        } else {
+          messageEl.textContent = data.message;
+          // Hide edit section
+          hideEditSection();
+          // Refresh tasks
+          fetchTasks();
+        }
+      } catch (error) {
+        console.error(error);
+        messageEl.textContent = 'An error occurred while updating the task.';
+      }
+    });
+
+    function hideEditSection() {
+      document.getElementById('editSection').style.display = 'none';
+    }
+
+    // 5. Delete Task
+    async function deleteTask(taskId) {
+      try {
+        const res = await fetch(`/api/tasks/${taskId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          messageEl.textContent = data.message || 'Failed to delete task.';
+        } else {
+          messageEl.textContent = data.message;
+          fetchTasks();
+        }
+      } catch (error) {
+        console.error(error);
+        messageEl.textContent = 'An error occurred while deleting the task.';
+      }
+    }
+
+    // On page load, fetch tasks
+    fetchTasks();
+  </script>
 </body>
 </html>

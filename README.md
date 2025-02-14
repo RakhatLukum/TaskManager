@@ -1,36 +1,69 @@
-# TaskManager
-My first extensive project that affects both the backend and the database
+# Task Manager Project
 
-## Description
-An application for managing tasks with user registration and authentication.
+## Overview
 
-## Installation
-1. Clone the repository
-2. Install the dependencies: `npm install`
-3. Create a '.env` file with the variables:
-4. Start the server: `npm start`
+A simple Task Manager application built with Node.js, Express.js, and MongoDB. It allows users to register, login, and manage their tasks.
 
-## API Documentation
+### Technologies Used
+- Node.js
+- Express.js
+- MongoDB (Mongoose)
+- JWT (Authentication)
+- bcrypt (Password Hashing)
+- express-validator (Request Validation)
 
-### Registration
-POST /api/register
-- Data: { "username", "email", "password" }
+## Setup Instructions
 
-### Entrance
-POST /api/login
-- Data: { "email", "password" }
+1. Clone this repository.
+2. Run `npm install` to install all dependencies.
+3. Create a `.env` file in the root folder with the following variables:
+4. Run `npm start` or `node server.js` to start the server.
 
-### Get tasks
-GET /api/tasks
-- Requires authorization
+## API Endpoints
 
-### Create a task
-POST /api/tasks
-- Data: { "title", "description", "DueDate" }
+### Authentication (Public)
+- **POST** `/api/users/register`  
+- Body: `{ "username": "string", "email": "string", "password": "string" }`
+- Register a new user. Passwords are hashed before storage.
+- **POST** `/api/users/login`  
+- Body: `{ "email": "string", "password": "string" }`
+- Returns a JWT token if the credentials are valid.
 
-### Update task
-PUT /api/tasks/:id
-- Data: { "title", "description", "status"}
+### User Management (Private)
+- **GET** `/api/users/profile`
+- Requires `Authorization: Bearer <token>`
+- Retrieves the logged-in user's profile.
+- **PUT** `/api/users/profile`
+- Requires `Authorization: Bearer <token>`
+- Allows logged-in user to update username or email.
 
-### Delete an issue
-DELETE /api/tasks/:id
+### Tasks (Private)
+- **POST** `/api/tasks`
+- Requires `Authorization: Bearer <token>`
+- Body: `{ "title": "string", "description": "string", "status": "string", "dueDate": "date" }`
+- Creates a new task for the logged-in user (or for all if admin).
+- **GET** `/api/tasks`
+- Requires `Authorization: Bearer <token>`
+- Fetches all tasks for the logged-in user. If the user is an admin, fetches all tasks.
+- **GET** `/api/tasks/:id`
+- Requires `Authorization: Bearer <token>`
+- Fetches the task by ID. A normal user can only view their own task; admin can view any.
+- **PUT** `/api/tasks/:id`
+- Requires `Authorization: Bearer <token>`
+- Updates the task with the provided ID. A normal user can only update their own task; admin can update any.
+- **DELETE** `/api/tasks/:id`
+- Requires `Authorization: Bearer <token>`
+- Deletes the task with the provided ID. A normal user can only delete their own task; admin can delete any.
+
+## Error Handling
+- Global error handling middleware returns errors in JSON format.
+- Validation errors return status `400` with a list of error messages.
+- Unauthorized access returns status `401`.
+- Forbidden actions return status `403`.
+
+## Deployment
+- You can deploy this application to services like Render, Railway, or Replit.
+- Ensure you set the same environment variables (PORT, MONGO_URI, JWT_SECRET) in your hosting platform’s settings.
+
+## License
+This project is open source. Feel free to modify and use as needed.
