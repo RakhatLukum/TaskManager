@@ -1,3 +1,5 @@
+// main.js
+
 // User management
 let currentUser = JSON.parse(localStorage.getItem('currentUser'));
 
@@ -41,12 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function switchAuthTab(tabName) {
-    // Update tab styles
     authTabs.forEach(tab => {
         tab.classList.toggle('active', tab.dataset.tab === tabName);
     });
-
-    // Show/hide forms
     document.getElementById('loginForm').classList.toggle('active', tabName === 'login');
     document.getElementById('registerForm').classList.toggle('active', tabName === 'register');
 }
@@ -55,11 +54,8 @@ function handleLogin(e) {
     e.preventDefault();
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
-
-    // Simple user validation (in production, use proper authentication)
     const users = JSON.parse(localStorage.getItem('users')) || [];
     const user = users.find(u => u.email === email && u.password === password);
-
     if (user) {
         currentUser = user;
         localStorage.setItem('currentUser', JSON.stringify(user));
@@ -75,20 +71,14 @@ function handleRegister(e) {
     const name = document.getElementById('registerName').value;
     const email = document.getElementById('registerEmail').value;
     const password = document.getElementById('registerPassword').value;
-
-    // Simple user storage (in production, use proper authentication)
     const users = JSON.parse(localStorage.getItem('users')) || [];
-    
     if (users.some(u => u.email === email)) {
         alert('Email already registered');
         return;
     }
-
     const newUser = { id: Date.now(), name, email, password };
     users.push(newUser);
     localStorage.setItem('users', JSON.stringify(users));
-
-    // Auto login after registration
     currentUser = newUser;
     localStorage.setItem('currentUser', JSON.stringify(newUser));
     showApp();
@@ -115,10 +105,14 @@ function openModal(taskId = null) {
         document.getElementById('taskDescription').value = task.description;
         document.getElementById('taskStatus').value = task.status;
         document.getElementById('taskDueDate').value = task.dueDate;
+        // NEW: Set the time field value
+        if(document.getElementById('taskTime')){
+            document.getElementById('taskTime').value = task.time || '';
+        }
     } else {
         modalTitle.textContent = 'Add New Task';
         taskForm.reset();
-        // Set default due date to tomorrow
+        // Set default due date to tomorrow at 23:59
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setHours(23, 59);
@@ -135,30 +129,29 @@ function closeModal() {
 function handleTaskSubmit(e) {
     e.preventDefault();
     
+    // Include the new time field
     const taskData = {
         title: document.getElementById('taskTitle').value,
         description: document.getElementById('taskDescription').value,
-        status: document.getElementById('taskStatus').value,
+        status: document.getElementById('taskStatus').value, // should be "not‑started", "incomplete", or "finished"
         dueDate: document.getElementById('taskDueDate').value,
+        time: document.getElementById('taskTime') ? document.getElementById('taskTime').value : '',
         userId: currentUser.id
     };
 
     if (editingTaskId) {
-        // Update existing task
         tasks = tasks.map(task => 
             task.id === editingTaskId 
                 ? { ...task, ...taskData }
                 : task
         );
     } else {
-        // Add new task
         tasks.push({
             id: Date.now(),
             ...taskData,
             createdAt: new Date().toISOString()
         });
     }
-
     saveTasks();
     renderTasks();
     closeModal();
@@ -176,31 +169,31 @@ function saveTasks() {
     localStorage.setItem('tasks', JSON.stringify(tasks));
 }
 
+// Updated status labels to match backend allowed values
 function getStatusLabel(status) {
     switch (status) {
         case 'not-started':
             return 'Not Started';
-        case 'in-progress':
-            return 'In Progress';
-        case 'completed':
-            return 'Completed';
+        case 'incomplete':
+            return 'Incomplete';
+        case 'finished':
+            return 'Finished';
         default:
             return status;
     }
 }
 
+// Updated: Removed undefined reference to task.completed
 function formatDueDate(dueDate) {
     const date = new Date(dueDate);
     const now = new Date();
-    const isOverdue = date < now && !task.completed;
-    
+    const isOverdue = date < now; 
     const formattedDate = date.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
         hour: 'numeric',
         minute: '2-digit'
     });
-
     return { formattedDate, isOverdue };
 }
 
@@ -215,7 +208,6 @@ function renderTasks() {
     const tasksContainer = document.getElementById('allTasks');
     tasksContainer.innerHTML = '';
 
-    // Filter tasks for current user and sort by due date
     const userTasks = tasks
         .filter(task => task.userId === currentUser.id)
         .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
@@ -246,6 +238,9 @@ function createTaskElement(task) {
             <div class="task-due-date ${isOverdue ? 'overdue' : ''}">
                 📅 Due: ${formattedDate}
                 ${isOverdue ? ' (Overdue)' : ''}
+            </div>
+            <div class="task-time">
+                ⏰ Time: ${task.time || 'N/A'}
             </div>
         </div>
         <span class="task-status status-${task.status}">${getStatusLabel(task.status)}</span>

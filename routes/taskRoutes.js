@@ -7,15 +7,20 @@ const authMiddleware = require('../middlewares/authMiddleware');
 const { createTaskValidation } = require('../validations/taskValidation');
 const { validationResult } = require('express-validator');
 
-// All tasks endpoints require authentication
+// All /api/tasks routes require token
 router.use(authMiddleware);
 
-// Create a new task
+// Create task
 router.post('/', createTaskValidation, (req, res, next) => {
+  // Check for validation errors first
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    return res.status(400).json({
+      errors: errors.array()
+    });
   }
+  
+  // If no validation errors, proceed to controller
   taskController.createTask(req, res, next);
 });
 

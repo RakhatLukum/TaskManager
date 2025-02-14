@@ -5,21 +5,26 @@ const Task = require('../models/taskModel');
 // Create a new task
 exports.createTask = async (req, res, next) => {
   try {
-    const { title, description, status, dueDate } = req.body;
+    const { title, description, status, dueDate, time } = req.body;
+
+    // userId is attached to req.user by authMiddleware (decoded from JWT)
+    const userId = req.user.userId;
 
     const newTask = new Task({
-      user: req.user.userId, // from authMiddleware
+      user: userId,
       title,
       description,
-      status,
-      dueDate,
+      status,   // must be one of ['not-started','incomplete','finished']
+      dueDate,  // might be something like "2025-03-01"
+      time      // e.g., "10:30"
     });
 
     await newTask.save();
 
-    res.status(201).json({
+    // Return success response
+    return res.status(201).json({
       message: 'Task created successfully',
-      task: newTask,
+      task: newTask
     });
   } catch (error) {
     next(error);
@@ -71,8 +76,9 @@ exports.getTaskById = async (req, res, next) => {
 exports.updateTask = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { title, description, status, dueDate, time } = req.body;
+    const { title, description, status, dueDate } = req.body;
 
+    // Check existing
     const task = await Task.findById(id);
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
@@ -83,11 +89,11 @@ exports.updateTask = async (req, res, next) => {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
-    if (title !== undefined) task.title = title;
-    if (description !== undefined) task.description = description;
-    if (status !== undefined) task.status = status;
-    if (dueDate !== undefined) task.dueDate = dueDate;
-    if (time !== undefined) task.time = time;
+    // Update fields
+    if (title) task.title = title;
+    if (description) task.description = description;
+    if (status) task.status = status;
+    if (dueDate) task.dueDate = dueDate;
 
     await task.save();
 

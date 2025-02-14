@@ -1,5 +1,3 @@
-// models/taskModel.js
-
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
@@ -17,7 +15,7 @@ const taskSchema = new Schema({
     type: String,
     default: '',
   },
-  // Updated status with 3 stages
+  // Allowed status values exactly match what we want:
   status: {
     type: String,
     enum: ['not-started', 'incomplete', 'finished'],
@@ -27,9 +25,8 @@ const taskSchema = new Schema({
     type: Date,
     default: null,
   },
-  // New field for hours/minutes
   time: {
-    type: String, // Storing in "HH:MM" format or "10:30 AM" etc.
+    type: String, // e.g., "10:30"
     default: '',
   },
 }, { timestamps: true });
