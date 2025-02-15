@@ -1,16 +1,28 @@
-<!-- public/index.html -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Task Manager</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Welcome to Task Manager</h1>
-  <ul>
-    <li><a href="register.html">Register</a></li>
-    <li><a href="login.html">Login</a></li>
-    <li><a href="tasks.html">Manage Tasks</a></li>
-  </ul>
+  <header class="header">
+    <div class="logo">Task Manager</div>
+  </header>
+
+  <main class="welcome-container">
+    <div class="welcome-content">
+      <h1>Welcome to Task Manager</h1>
+      <p class="subtitle">Manage your tasks efficiently</p>
+      
+      <div class="auth-container">
+        <ul>
+          <li><a href="register.html" class="btn btn-primary">Register</a></li>
+          <li><a href="login.html" class="btn btn-primary">Login</a></li>
+        </ul>
+      </div>
+    </div>
+  </main>
 </body>
 </html>
