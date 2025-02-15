@@ -106,22 +106,22 @@ exports.updateTask = async (req, res, next) => {
   }
 };
 
-// Delete a task
+// Update the deleteTask function
 exports.deleteTask = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const task = await Task.findById(id);
+    // Use findByIdAndDelete instead of separate find + remove
+    const task = await Task.findByIdAndDelete(id);
+    
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    // If user is not admin, ensure they own the task
+    // Authorization check remains the same
     if (req.user.role !== 'admin' && task.user.toString() !== req.user.userId) {
       return res.status(403).json({ message: 'Forbidden' });
     }
-
-    await task.remove();
 
     res.status(200).json({ message: 'Task deleted successfully' });
   } catch (error) {
