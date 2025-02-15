@@ -6,6 +6,7 @@ const connectDB = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const errorMiddleware = require('./middlewares/errorMiddleware');
+const adminRoutes = require('./routes/adminRoutes');
 require('dotenv').config();
 
 const app = express();
@@ -23,6 +24,7 @@ app.use(express.static('public'));
 // API Routes
 app.use('/api/users', userRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Global Error Handling
 app.use(errorMiddleware);

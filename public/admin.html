@@ -1,0 +1,182 @@
+<!-- admin.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #tasksContainer .task-card {
+      border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body onload="checkAdmin(); fetchAllTasks();">
+  <h1>Admin Dashboard</h1>
+  <button onclick="logout()">Logout</button>
+
+  <hr/>
+
+  <h2>All Tasks (Across All Users)</h2>
+  <div id="tasksContainer"></div>
+
+  <hr/>
+
+  <h2>Create a Task for Any User</h2>
+  <form onsubmit="createTaskForUser(event)">
+    <label>Title:</label><br>
+    <input type="text" id="taskTitleAdmin" required><br><br>
+
+    <label>Description:</label><br>
+    <input type="text" id="taskDescriptionAdmin"><br><br>
+
+    <label>Status:</label><br>
+    <select id="taskStatusAdmin">
+      <option value="not-started">Not Started</option>
+      <option value="incomplete">Incomplete</option>
+      <option value="finished">Finished</option>
+    </select><br><br>
+
+    <label>Due Date (yyyy-mm-ddThh:mm):</label><br>
+    <input type="datetime-local" id="taskDueDateAdmin" required><br><br>
+
+    <label>Time (HH:MM):</label><br>
+    <input type="text" id="taskTimeAdmin" placeholder="e.g. 10:30"><br><br>
+
+    <label>Assign to (User ID):</label><br>
+    <input type="text" id="assignUserIdAdmin" placeholder="User's _id"><br><br>
+
+    <button type="submit">Create Task</button>
+  </form>
+
+  <hr/>
+
+  <h2>Promote a User</h2>
+  <button onclick="promoteUser()">Promote a User by ID</button>
+
+  <p id="adminMessage" style="color:red;"></p>
+
+  <script>
+    function checkAdmin() {
+      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      const token = localStorage.getItem('token');
+      if (!currentUser || currentUser.role !== 'admin' || !token) {
+        // Not admin => go to login
+        window.location.href = 'login.html';
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('token');
+      window.location.href = 'login.html';
+    }
+
+    async function fetchAllTasks() {
+      const token = localStorage.getItem('token');
+      const adminMessage = document.getElementById('adminMessage');
+      try {
+        const res = await fetch('/api/tasks', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || 'Failed to fetch tasks');
+        }
+        renderAllTasks(data.tasks);
+      } catch (error) {
+        adminMessage.textContent = error.message;
+      }
+    }
+
+    function renderAllTasks(tasks) {
+      const tasksContainer = document.getElementById('tasksContainer');
+      tasksContainer.innerHTML = '';
+      if (!tasks.length) {
+        tasksContainer.innerHTML = `<p>No tasks found.</p>`;
+        return;
+      }
+      tasks.forEach((task) => {
+        const div = document.createElement('div');
+        div.className = 'task-card';
+        const dueStr = task.dueDate
+          ? new Date(task.dueDate).toLocaleString()
+          : 'N/A';
+        let ownerName = 'Unknown';
+        if (task.user && task.user.username) {
+          ownerName = `${task.user.username} (${task.user.email})`;
+        }
+        div.innerHTML = `
+          <h3>${task.title}</h3>
+          <p>Description: ${task.description}</p>
+          <p>Status: ${task.status}</p>
+          <p>Due: ${dueStr}</p>
+          <p>Time: ${task.time || 'N/A'}</p>
+          <p>Owner: ${ownerName}</p>
+        `;
+        tasksContainer.appendChild(div);
+      });
+    }
+
+    async function createTaskForUser(e) {
+      e.preventDefault();
+      const token = localStorage.getItem('token');
+      const adminMessage = document.getElementById('adminMessage');
+
+      const title = document.getElementById('taskTitleAdmin').value;
+      const description = document.getElementById('taskDescriptionAdmin').value;
+      const status = document.getElementById('taskStatusAdmin').value;
+      const dueDate = document.getElementById('taskDueDateAdmin').value;
+      const time = document.getElementById('taskTimeAdmin').value;
+      const userId = document.getElementById('assignUserIdAdmin').value;
+
+      const payload = { title, description, status, dueDate, time, userId };
+
+      try {
+        const res = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || 'Failed to create task');
+        }
+        adminMessage.textContent = data.message;
+        // Clear form
+        e.target.reset();
+        // Refresh tasks
+        fetchAllTasks();
+      } catch (error) {
+        adminMessage.textContent = error.message;
+      }
+    }
+
+    async function promoteUser() {
+      const userId = prompt('Enter the User ID to promote:');
+      if (!userId) return;
+      const token = localStorage.getItem('token');
+      const adminMessage = document.getElementById('adminMessage');
+      try {
+        const res = await fetch(`/api/admin/promote/${userId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || 'Failed to promote user');
+        }
+        adminMessage.textContent = data.message;
+      } catch (error) {
+        adminMessage.textContent = error.message;
+      }
+    }
+  </script>
+</body>
+</html>

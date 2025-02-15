@@ -1,6 +1,6 @@
-// controllers/taskController.js
-
+const mongoose = require('mongoose');
 const Task = require('../models/taskModel');
+const User = require('../models/userModel'); // Add User model import
 
 // Create a new task
 exports.createTask = async (req, res, next) => {
@@ -126,5 +126,138 @@ exports.deleteTask = async (req, res, next) => {
     res.status(200).json({ message: 'Task deleted successfully' });
   } catch (error) {
     next(error);
+  }
+};
+
+// Admin: Get all tasks with user details
+exports.getAllTasksForAdmin = async (req, res) => {
+  try {
+    const tasks = await Task.find().populate('user', 'name email');
+    res.status(200).json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Admin: Create task for any user
+exports.createTaskAsAdmin = async (req, res) => {
+  try {
+    const { title, description, status, user, dueDate, time } = req.body;
+    
+    // Validate user exists
+    if (!mongoose.Types.ObjectId.isValid(user)) {
+      return res.status(400).json({ message: 'Invalid user ID format' });
+    }
+    
+    const userExists = await User.findById(user);
+    if (!userExists) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const task = new Task({
+      title,
+      description,
+      status: status || 'not-started',
+      user,
+      dueDate: dueDate || null,
+      time: time || ''
+    });
+
+    await task.save();
+    res.status(201).json(task);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Admin: Update any task (including user reassignment)
+exports.updateTaskAsAdmin = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+
+    const { title, description, status, user, dueDate, time } = req.body;
+
+    // Validate status
+    if (status && !['not-started', 'incomplete', 'finished'].includes(status)) {
+      return res.status(400).json({ 
+        message: 'Invalid status value. Valid values: not-started, incomplete, finished' 
+      });
+    }
+
+    // Validate user if provided
+    if (user) {
+      if (!mongoose.Types.ObjectId.isValid(user)) {
+        return res.status(400).json({ message: 'Invalid user ID format' });
+      }
+      
+      const userExists = await User.findById(user);
+      if (!userExists) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      task.user = user;
+    }
+
+    // Update other fields
+    task.title = title || task.title;
+    task.description = description || task.description;
+    task.status = status || task.status;
+    task.dueDate = dueDate || task.dueDate;
+    task.time = time || task.time;
+
+    await task.save();
+    res.status(200).json(task);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Admin: Update any task (including user reassignment)
+exports.updateTaskAsAdmin = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+
+    const { title, description, status, user } = req.body;
+
+    // Updated status validation to match model enum
+    if (status && !['not-started', 'incomplete', 'finished'].includes(status)) {
+      return res.status(400).json({ 
+        message: 'Invalid status value. Valid values are: not-started, incomplete, finished'
+      });
+    }
+
+    // Rest of your update logic...
+    task.title = title || task.title;
+    task.description = description || task.description;
+    if (status) task.status = status;
+
+    // User validation and update
+    if (user) {
+      if (!mongoose.Types.ObjectId.isValid(user)) {
+        return res.status(400).json({ message: 'Invalid user ID' });
+      }
+      const userExists = await User.findById(user);
+      if (!userExists) {
+        return res.status(400).json({ message: 'User does not exist' });
+      }
+      task.user = user;
+    }
+
+    await task.save();
+    res.status(200).json(task);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Admin: Delete any task
+exports.deleteTaskAsAdmin = async (req, res) => {
+  try {
+    const task = await Task.findByIdAndDelete(req.params.id);
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+    res.status(200).json({ message: 'Task deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
