@@ -1,9 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8">
   <title>Login - Task Manager</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .auth-container {
+      background: white;
+      padding: 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+      margin-top: 4rem;
+    }
+
+    h1 {
+      color: #1a1a1a;
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 1.8rem;
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .form-group {
+      width: 100%;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #4a5568;
+      font-weight: 500;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.875rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    input:focus {
+      border-color: #4C6FFF;
+      box-shadow: 0 0 0 3px rgba(76, 111, 255, 0.1);
+      outline: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.875rem;
+      background: #4C6FFF;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background: #405dff;
+      transform: translateY(-1px);
+    }
+
+    #message {
+      text-align: center;
+      margin-top: 1rem;
+      color: #e53e3e;
+      font-size: 0.9rem;
+    }
+  </style>
 </head>
 <body>
   <header class="header">
@@ -12,24 +96,23 @@
 
   <main>
     <div class="auth-container">
-      <h1>Login</h1>
+      <h1>Login to Continue</h1>
       <form id="loginForm" class="auth-form">
         <div class="form-group">
-          <label for="email">Email:</label>
-          <input type="email" id="email" required />
+          <label for="email">Email Address</label>
+          <input type="email" id="email" required placeholder="example@email.com">
         </div>
 
         <div class="form-group">
-          <label for="password">Password:</label>
-          <input type="password" id="password" required />
+          <label for="password">Password</label>
+          <input type="password" id="password" required placeholder="••••••••">
         </div>
 
-        <button type="submit" class="btn btn-primary">Login</button>
+        <button type="submit">Sign In</button>
       </form>
       <p id="message"></p>
     </div>
   </main>
-
   <script>
     const loginForm = document.getElementById('loginForm');
     const messageEl = document.getElementById('message');

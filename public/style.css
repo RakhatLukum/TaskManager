@@ -217,4 +217,91 @@ body {
   .auth-container a:hover {
     background-color: #3659b8;
   }
+
+  /* Header Styles */
+.header {
+    background-color: #4C6FFF;
+    color: white;
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .header .logo {
+    font-size: 1.8rem;
+    font-weight: bold;
+  }
+  
+  /* Auth Container Styles */
+  .auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    padding: 20px;
+  }
+  
+  .auth-form {
+    background-color: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .auth-form h1 {
+    margin-bottom: 30px;
+    text-align: center;
+    font-size: 2rem;
+  }
+  
+  .form-group {
+    margin-bottom: 20px;
+  }
+  
+  label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+  }
+  
+  input:focus {
+    outline: none;
+    border-color: #4C6FFF;
+  }
+  
+  button {
+    width: 100%;
+    padding: 12px;
+    font-size: 1.1rem;
+    background-color: #4C6FFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  button:hover {
+    background-color: #3659b8;
+  }
+  
+  /* Message styles */
+  p#message {
+    text-align: center;
+    margin-top: 15px;
+    color: red;
+  }
   
