@@ -26,7 +26,7 @@ router.post('/', createTaskValidation, (req, res, next) => {
 
 // Get all tasks with optional search query
 // If a search query is provided, it filters tasks by title
-router.get('/', taskController.getTasks); // Handles fetching tasks with an optional search query
+router.get('/', taskController.getAllTasks); // Handles fetching tasks with an optional search query
 
 // Get a specific task by its ID
 router.get('/:id', taskController.getTaskById); // Fetch task by ID

@@ -225,6 +225,42 @@
       <h2>Your Tasks</h2>
       <div id="taskList"></div>
     </section>
+    <!-- Edit Modal (Add this section to your HTML body) -->
+  <div class="edit-modal" id="editModal">
+    <div class="edit-container">
+      <h2>Edit Task</h2>
+      <form id="editTaskForm">
+        <input type="hidden" id="editTaskId" /> <!-- Hidden field to store task ID -->
+        <div class="form-group">
+          <label for="editTitle">Title</label>
+          <input type="text" id="editTitle" required />
+        </div>
+        <div class="form-group">
+         <label for="editDescription">Description</label>
+          <textarea id="editDescription" rows="3"></textarea>
+       </div>
+       <div class="form-group">
+         <label for="editDueDate">Due Date</label>
+         <input type="date" id="editDueDate" />
+       </div>
+        <div class="form-group">
+          <label for="editTime">Time</label>
+          <input type="time" id="editTime" />
+       </div>
+        <div class="form-group">
+          <label for="editStatus">Status</label>
+          <select id="editStatus">
+              <option value="not-started">Not Started</option>
+            <option value="incomplete">Incomplete</option>
+           <option value="finished">Finished</option>
+         </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <button type="button" class="btn btn-secondary" onclick="hideEditSection()">Cancel</button>
+      </form>
+    </div>
+  </div>
+
   </main>
 
   <script>
@@ -240,12 +276,25 @@
         const res = await fetch(`/api/tasks?search=${query}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
+    
+        // Check if the response is OK
+        if (!res.ok) {
+          showMessage('Error fetching tasks', 'error');
+          return;
+        }
+    
         const data = await res.json();
-        renderTasks(data.tasks);
+    
+        // Debug: Log the response data
+        console.log(data);  // Log the response to see if we get the tasks
+    
+        renderTasks(data.tasks);  // Pass the tasks to render
       } catch (error) {
         showMessage('Error fetching tasks', 'error');
       }
     }
+
+    fetchTasks();
 
     function renderTasks(tasks) {
       taskListEl.innerHTML = tasks.map(task => `
@@ -275,8 +324,131 @@
       fetchTasks(query);  // Fetch tasks with the search query
     }
 
-    // Initial fetch
-    fetchTasks();
+    // Task creation
+    document.getElementById('createTaskForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = {
+        title: document.getElementById('createTitle').value,
+        description: document.getElementById('createDescription').value,
+        dueDate: document.getElementById('createDueDate').value,
+        time: document.getElementById('createTime').value,
+        status: document.getElementById('createStatus').value
+      };
+
+      try {
+        const res = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(formData)
+        });
+        
+        if (res.ok) {
+          fetchTasks();
+          e.target.reset();
+          showMessage('Task created successfully', 'success');
+        }
+      } catch (error) {
+        showMessage('Error creating task', 'error');
+      }
+    });
+
+    // Edit functionality
+    async function editTask(taskId) {
+      try {
+        const res = await fetch(`/api/tasks/${taskId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        if (data.task) {
+          document.getElementById('editTaskId').value = data.task._id;
+          document.getElementById('editTitle').value = data.task.title;
+          document.getElementById('editDescription').value = data.task.description || '';
+          document.getElementById('editDueDate').value = data.task.dueDate || '';
+          document.getElementById('editTime').value = data.task.time || '';
+          document.getElementById('editStatus').value = data.task.status;
+          document.getElementById('editModal').style.display = 'flex';
+        }
+      } catch (error) {
+        showMessage('Error loading task', 'error');
+      }
+    }
+
+    document.getElementById('editTaskForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = {
+        title: document.getElementById('editTitle').value,
+        description: document.getElementById('editDescription').value,
+        dueDate: document.getElementById('editDueDate').value,
+        time: document.getElementById('editTime').value,
+        status: document.getElementById('editStatus').value
+      };
+
+      try {
+        const res = await fetch(`/api/tasks/${document.getElementById('editTaskId').value}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(formData)
+        });
+
+        if (res.ok) {
+          fetchTasks();
+          hideEditSection();
+          showMessage('Task updated successfully', 'success');
+        }
+      } catch (error) {
+        showMessage('Error updating task', 'error');
+      }
+    });
+
+    // Delete functionality
+    async function deleteTask(taskId) {
+      if (!confirm('Are you sure?')) return;
+      
+      try {
+        const res = await fetch(`/api/tasks/${taskId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+          document.querySelector(`[data-task-id="${taskId}"]`).remove();
+          showMessage('Task deleted', 'success');
+        }
+      } catch (error) {
+        showMessage('Error deleting task', 'error');
+      }
+    }
+
+    function hideEditSection() {
+      document.getElementById('editModal').style.display = 'none';
+    }
+
+    function showMessage(text, type) {
+      const messageEl = document.createElement('div');
+      messageEl.textContent = text;
+      messageEl.style.position = 'fixed';
+      messageEl.style.bottom = '20px';
+      messageEl.style.right = '20px';
+      messageEl.style.padding = '1rem 2rem';
+      messageEl.style.borderRadius = '8px';
+      messageEl.style.background = type === 'error' ? '#EF4444' : '#10B981';
+      messageEl.style.color = 'white';
+      document.body.appendChild(messageEl);
+
+      setTimeout(() => messageEl.remove(), 3000);
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      window.location.href = 'index.html';
+    }
   </script>
 </body>
 </html>

@@ -35,21 +35,28 @@ exports.createTask = async (req, res, next) => {
 // If admin, retrieve all tasks
 exports.getAllTasks = async (req, res, next) => {
   try {
+    const { search } = req.query;  // Get search query parameter
+    const userId = req.user.userId;  // Get the logged-in user's ID from the JWT payload
+
+    // Create a query object for the search functionality
+    const searchQuery = search ? { title: { $regex: search, $options: 'i' } } : {}; // If there's a search query, filter tasks by title
+
     let tasks = [];
 
     if (req.user.role === 'admin') {
-      // Admin can fetch all tasks
-      tasks = await Task.find().populate('user', '-password');
+      // Admin can fetch all tasks, but apply search filter if provided
+      tasks = await Task.find(searchQuery).populate('user', '-password');
     } else {
-      // Regular user can only fetch their own tasks
-      tasks = await Task.find({ user: req.user.userId });
+      // Regular user can only fetch their own tasks and apply search filter to their tasks
+      tasks = await Task.find({ user: userId, ...searchQuery });
     }
 
-    res.status(200).json({ tasks });
+    res.status(200).json({ tasks });  // Return the tasks in the response
   } catch (error) {
-    next(error);
+    next(error);  // Pass the error to the next middleware (error handler)
   }
 };
+
 
 // Get a specific task by ID
 exports.getTaskById = async (req, res, next) => {
@@ -126,20 +133,6 @@ exports.deleteTask = async (req, res, next) => {
     res.status(200).json({ message: 'Task deleted successfully' });
   } catch (error) {
     next(error);
-  }
-};
-
-// Function to get tasks with the option to search by title
-exports.getTasks = async (req, res) => {
-  const { search } = req.query;
-
-  try {
-    const query = search ? { title: { $regex: search, $options: 'i' } } : {}; 
-
-    const tasks = await Task.find(query); 
-    res.status(200).json({ tasks });
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching tasks', error: error.message });
   }
 };
 
