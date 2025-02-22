@@ -129,6 +129,20 @@ exports.deleteTask = async (req, res, next) => {
   }
 };
 
+// Function to get tasks with the option to search by title
+exports.getTasks = async (req, res) => {
+  const { search } = req.query;
+
+  try {
+    const query = search ? { title: { $regex: search, $options: 'i' } } : {}; 
+
+    const tasks = await Task.find(query); 
+    res.status(200).json({ tasks });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching tasks', error: error.message });
+  }
+};
+
 // Admin: Get all tasks with user details
 exports.getAllTasksForAdmin = async (req, res) => {
   try {
