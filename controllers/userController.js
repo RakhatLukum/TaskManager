@@ -69,43 +69,49 @@ exports.loginUser = async (req, res, next) => {
   }
 };
 
-exports.getUserProfile = async (req, res, next) => {
+// Get the logged-in user's profile
+exports.getUserProfile = async (req, res) => {
   try {
-    // userId added from authMiddleware
-    const user = await User.findById(req.user.userId).select('-password');
+    const user = await User.findById(req.user.userId).select('-password'); // Don't return the password
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    res.status(200).json({ user });
+    res.status(200).json({ user }); // Return the user profile
   } catch (error) {
-    next(error);
+    res.status(500).json({ message: 'Error fetching profile', error: error.message });
   }
 };
 
-exports.updateUserProfile = async (req, res, next) => {
+// Update the user's profile (username, email, and password)
+exports.updateUserProfile = async (req, res) => {
+  const { username, email, currentPassword, newPassword } = req.body;
+
   try {
-    const { username, email } = req.body;
-    const updatedData = {};
-
-    if (username) updatedData.username = username;
-    if (email) updatedData.email = email;
-
-    // userId added from authMiddleware
-    const user = await User.findByIdAndUpdate(
-      req.user.userId,
-      updatedData,
-      { new: true }
-    ).select('-password');
+    const user = await User.findById(req.user.userId); // Find the user by ID
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.status(200).json({ 
-      message: 'Profile updated successfully', 
-      user 
-    });
+    // If a new password is provided, check if the current password is correct
+    if (newPassword) {
+      const isMatch = await bcrypt.compare(currentPassword, user.password); // Compare current password
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Current password is incorrect' });
+      }
+
+      // Hash the new password before saving it
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(newPassword, salt);
+    }
+
+    // Update the username and email if provided
+    if (username) user.username = username;
+    if (email) user.email = email;
+
+    await user.save(); // Save the updated user information
+    res.status(200).json({ message: 'Profile updated successfully', user: { username: user.username, email: user.email } });
   } catch (error) {
-    next(error);
+    res.status(500).json({ message: 'Error updating profile', error: error.message });
   }
 };

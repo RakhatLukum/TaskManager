@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile Edit - Task Manager</title>
+  <style>
+    /* Basic styles for the profile edit page */
+    body { font-family: Arial, sans-serif; }
+    .container { width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; }
+    label { display: block; margin: 10px 0 5px; }
+    input { width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; }
+    button { padding: 10px 20px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Edit Profile</h1>
+    <form id="editProfileForm">
+      <!-- Username input -->
+      <label for="username">Username</label>
+      <input type="text" id="username" placeholder="Enter your username" required />
+
+      <!-- Email input -->
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="Enter your email" required />
+
+      <!-- Current password input -->
+      <label for="currentPassword">Current Password</label>
+      <input type="password" id="currentPassword" placeholder="Enter current password" required />
+
+      <!-- New password input -->
+      <label for="newPassword">New Password</label>
+      <input type="password" id="newPassword" placeholder="Enter new password" />
+
+      <!-- Confirm new password input -->
+      <label for="confirmNewPassword">Confirm New Password</label>
+      <input type="password" id="confirmNewPassword" placeholder="Confirm new password" />
+
+      <!-- Submit button -->
+      <button type="submit">Update Profile</button>
+    </form>
+
+    <!-- Message display area -->
+    <p id="message"></p>
+  </div>
+
+  <script>
+    // Fetch and display the user's current profile when the page loads
+    async function fetchUserProfile() {
+      const token = localStorage.getItem('token');
+      try {
+        const response = await fetch('/api/users/profile', {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Error fetching profile');
+
+        // Populate the form with user data
+        document.getElementById('username').value = data.user.username;
+        document.getElementById('email').value = data.user.email;
+      } catch (error) {
+        document.getElementById('message').textContent = error.message;
+      }
+    }
+
+    // Handle profile update form submission
+    document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const token = localStorage.getItem('token');
+      const username = document.getElementById('username').value;
+      const email = document.getElementById('email').value;
+      const currentPassword = document.getElementById('currentPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+
+      // Check if new passwords match
+      if (newPassword !== confirmNewPassword) {
+        document.getElementById('message').textContent = 'New passwords do not match';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/users/profile', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ username, email, currentPassword, newPassword })
+        });
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.message || 'Error updating profile');
+
+        document.getElementById('message').style.color = 'green';
+        document.getElementById('message').textContent = 'Profile updated successfully!';
+      } catch (error) {
+        document.getElementById('message').textContent = error.message;
+      }
+    });
+
+    // Fetch user profile data when the page loads
+    fetchUserProfile();
+  </script>
+</body>
+</html>
