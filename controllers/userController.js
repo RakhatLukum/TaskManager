@@ -93,23 +93,20 @@ exports.updateUserProfile = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // If a new password is provided, check if the current password is correct
     if (newPassword) {
       const isMatch = await bcrypt.compare(currentPassword, user.password); // Compare current password
       if (!isMatch) {
         return res.status(400).json({ message: 'Current password is incorrect' });
       }
 
-      // Hash the new password before saving it
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(newPassword, salt);
     }
 
-    // Update the username and email if provided
     if (username) user.username = username;
     if (email) user.email = email;
 
-    await user.save(); // Save the updated user information
+    await user.save();
     res.status(200).json({ message: 'Profile updated successfully', user: { username: user.username, email: user.email } });
   } catch (error) {
     res.status(500).json({ message: 'Error updating profile', error: error.message });

@@ -173,12 +173,19 @@
         justify-content: flex-end;
       }
     }
+
+    .username {
+      color: white;
+      margin-right: 20px;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
   <header class="header">
     <div class="logo">Task Manager</div>
     <div>
+      <span class="username" id="userName">Loading...</span>
       <button class="btn btn-primary" onclick="window.location.href='profile-edit.html'">Profile</button>
       <button class="btn btn-danger" onclick="logout()">Logout</button>
     </div>
@@ -230,7 +237,7 @@
     <div class="edit-container">
       <h2>Edit Task</h2>
       <form id="editTaskForm">
-        <input type="hidden" id="editTaskId" /> <!-- Hidden field to store task ID -->
+        <input type="hidden" id="editTaskId" />
         <div class="form-group">
           <label for="editTitle">Title</label>
           <input type="text" id="editTitle" required />
@@ -277,7 +284,6 @@
           headers: { 'Authorization': `Bearer ${token}` }
         });
     
-        // Check if the response is OK
         if (!res.ok) {
           showMessage('Error fetching tasks', 'error');
           return;
@@ -285,10 +291,9 @@
     
         const data = await res.json();
     
-        // Debug: Log the response data
-        console.log(data);  // Log the response to see if we get the tasks
+        console.log(data);
     
-        renderTasks(data.tasks);  // Pass the tasks to render
+        renderTasks(data.tasks);
       } catch (error) {
         showMessage('Error fetching tasks', 'error');
       }
@@ -321,7 +326,7 @@
     // Task search function triggered by the search bar
     function searchTasks() {
       const query = searchBar.value.trim();
-      fetchTasks(query);  // Fetch tasks with the search query
+      fetchTasks(query);
     }
 
     // Task creation
@@ -444,6 +449,30 @@
 
       setTimeout(() => messageEl.remove(), 3000);
     }
+
+    // Fetch user profile data
+    async function fetchUserProfile() {
+      try {
+        const res = await fetch('/api/users/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+
+        // If the request is successful, update the username
+        if (data.user) {
+          document.getElementById('userName').textContent = data.user.username; // Display the user's name
+        } else {
+          console.error("Error fetching user profile");
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    }
+
+    // Call the fetch function to update the username when the page loads
+    fetchUserProfile();
 
     function logout() {
       localStorage.removeItem('token');

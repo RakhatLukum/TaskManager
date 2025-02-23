@@ -1,27 +1,25 @@
 const mongoose = require('mongoose');
 const Task = require('../models/taskModel');
-const User = require('../models/userModel'); // Add User model import
+const User = require('../models/userModel');
 
 // Create a new task
 exports.createTask = async (req, res, next) => {
   try {
     const { title, description, status, dueDate, time } = req.body;
 
-    // userId is attached to req.user by authMiddleware (decoded from JWT)
     const userId = req.user.userId;
 
     const newTask = new Task({
       user: userId,
       title,
       description,
-      status,   // must be one of ['not-started','incomplete','finished']
-      dueDate,  // might be something like "2025-03-01"
-      time      // e.g., "10:30"
+      status,   
+      dueDate,  
+      time      
     });
 
     await newTask.save();
 
-    // Return success response
     return res.status(201).json({
       message: 'Task created successfully',
       task: newTask
@@ -32,28 +30,24 @@ exports.createTask = async (req, res, next) => {
 };
 
 // Get all tasks for the logged-in user (if normal user)
-// If admin, retrieve all tasks
 exports.getAllTasks = async (req, res, next) => {
   try {
-    const { search } = req.query;  // Get search query parameter
-    const userId = req.user.userId;  // Get the logged-in user's ID from the JWT payload
+    const { search } = req.query;
+    const userId = req.user.userId;
 
-    // Create a query object for the search functionality
-    const searchQuery = search ? { title: { $regex: search, $options: 'i' } } : {}; // If there's a search query, filter tasks by title
+    const searchQuery = search ? { title: { $regex: search, $options: 'i' } } : {};
 
     let tasks = [];
 
     if (req.user.role === 'admin') {
-      // Admin can fetch all tasks, but apply search filter if provided
       tasks = await Task.find(searchQuery).populate('user', '-password');
     } else {
-      // Regular user can only fetch their own tasks and apply search filter to their tasks
       tasks = await Task.find({ user: userId, ...searchQuery });
     }
 
-    res.status(200).json({ tasks });  // Return the tasks in the response
+    res.status(200).json({ tasks }); 
   } catch (error) {
-    next(error);  // Pass the error to the next middleware (error handler)
+    next(error); 
   }
 };
 
@@ -68,7 +62,6 @@ exports.getTaskById = async (req, res, next) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    // If user is not admin, ensure they own the task
     if (req.user.role !== 'admin' && task.user._id.toString() !== req.user.userId) {
       return res.status(403).json({ message: 'Forbidden' });
     }
@@ -91,7 +84,6 @@ exports.updateTask = async (req, res, next) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    // If user is not admin, ensure they own the task
     if (req.user.role !== 'admin' && task.user.toString() !== req.user.userId) {
       return res.status(403).json({ message: 'Forbidden' });
     }

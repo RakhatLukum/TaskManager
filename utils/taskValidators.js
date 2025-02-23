@@ -13,10 +13,4 @@ exports.createTaskValidation = [
     .optional()
     .isIn(['not-started', 'incomplete', 'finished'])
     .withMessage('Invalid status value'),
-
-  // (Optional) Validate "time" if you'd like:
-  // body('time')
-  //   .optional()
-  //   .matches(/^([01]\d|2[0-3]):([0-5]\d)$/)
-  //   .withMessage('Invalid time format, use HH:MM'),
 ];
