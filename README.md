@@ -62,8 +62,9 @@ A simple Task Manager application built with Node.js, Express.js, and MongoDB. I
 - Forbidden actions return status `403`.
 
 ## Deployment
-- You can deploy this application to services like Render, Railway, or Replit.
-- Ensure you set the same environment variables (PORT, MONGO_URI, JWT_SECRET) in your hosting platform’s settings.
+- This application was deployed on a Render service. Here is the link:
+    https://taskmanager-ep76.onrender.com
+- You can also run it locally by downloading the entire project.
 
 ## License
 This project is open source. Feel free to modify and use as needed.
