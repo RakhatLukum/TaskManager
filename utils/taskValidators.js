@@ -1,5 +1,3 @@
-// validations/taskValidation.js
-
 const { body } = require('express-validator');
 
 exports.createTaskValidation = [
