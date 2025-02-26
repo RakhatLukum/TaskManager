@@ -1,5 +1,3 @@
-// middlewares/errorMiddleware.js
-
 const errorMiddleware = (err, req, res, next) => {
     console.error('[Error Middleware]', err.stack);
   
