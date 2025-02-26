@@ -1,4 +1,3 @@
-// validations/userValidation.js
 const { body } = require('express-validator');
 
 exports.registerValidation = [
